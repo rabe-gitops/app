@@ -1,14 +1,16 @@
 pipeline {
   agent none
 
-  // ENVIRONMENT
+  /*** ENVIRONMENT ***/
   environment {
     PROJECT_NAME = 'rabe-gitops'
     REPOSITORY_NAME = 'app'
   }
 
-  // STAGES
+  /*** STAGES ***/
   stages {
+
+    /* CHECKOUT */
     stage('checkout') {
       agent {
         label 'ci-jenkins-slave'
@@ -18,17 +20,23 @@ pipeline {
       }
     }
 
+    /* BUILD */
     stage('build') {
+
       when {
+        // Only for the master branch
         branch 'master'
       }
+
       agent {
+        // Execute on Kaniko Slave pod
         kubernetes {
           label 'kaniko-slave'
         }
       }
+
       steps {
-        // Select container inside pod
+        // Select Kaniko container inside Kaniko Slave pod
         container('kaniko') {
           sh '''
           /kaniko/executor \
@@ -42,7 +50,7 @@ pipeline {
 
   }
 
-  // // POST-EXECUTION
+  // /*** POST-EXECUTION ***/
   // post {
   //   success {
   //     node('ci-jenkins-slave') {
