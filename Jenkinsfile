@@ -25,7 +25,7 @@ pipeline {
 
       when {
         // Only for the master branch
-        buildingTag()
+        tag 'v*'
       }
 
       agent {
