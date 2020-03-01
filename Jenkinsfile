@@ -10,15 +10,15 @@ pipeline {
   /*** STAGES ***/
   stages {
 
-    /* CHECKOUT */
-    stage('checkout') {
-      agent {
-        label 'jenkins-slave'
-      }
-      steps {
-        echo 'CHECKOUT'
-      }
-    }
+    // /* CHECKOUT */
+    // stage('checkout') {
+    //   agent {
+    //     label 'jenkins-slave'
+    //   }
+    //   steps {
+    //     echo 'CHECKOUT'
+    //   }
+    // }
 
     /* BUILD */
     stage('build') {
