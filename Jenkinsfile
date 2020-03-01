@@ -25,7 +25,7 @@ pipeline {
 
       when {
         // Only for the master branch
-        tag 'v*'
+        tag pattern: "v\\d+", comparator: "REGEXP"
       }
 
       agent {
