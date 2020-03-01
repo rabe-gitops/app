@@ -25,7 +25,7 @@ pipeline {
 
       when {
         // Only for the master branch
-        branch 'master'
+        buildingTag()
       }
 
       agent {
@@ -41,8 +41,9 @@ pipeline {
           sh 'printenv'
           sh '''
           /kaniko/executor \
-            --dockerfile `pwd`/Dockerfile \
-            --context `pwd` \
+            --dockerfile $(pwd)/Dockerfile \
+            --context $(pwd) \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
             --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
           '''
         }
