@@ -13,7 +13,7 @@ pipeline {
     /* CHECKOUT */
     stage('checkout') {
       agent {
-        label 'ci-jenkins-slave'
+        label 'jenkins-slave'
       }
       steps {
         echo 'CHECKOUT'
