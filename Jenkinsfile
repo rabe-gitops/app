@@ -31,9 +31,10 @@ pipeline {
         // Select container inside pod
         container('kaniko') {
           sh '''
-          /kaniko/executor --dockerfile `pwd`/Dockerfile \
-                          --context `pwd` \
-                          --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
+          /kaniko/executor \
+            --dockerfile `pwd`/Dockerfile \
+            --context `pwd` \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
           '''
         }
       }
@@ -41,22 +42,22 @@ pipeline {
 
   }
 
-  // POST-EXECUTION
-  post {
-    success {
-      node('master') {
-        echo 'SUCCESS'
-      }
-    }
-    failure {
-      node('master') {
-        echo 'FAILURE'
-      }
-    }
-    always {
-      node('master') {
-        echo 'ENDED'
-      }
-    }
-  }
+  // // POST-EXECUTION
+  // post {
+  //   success {
+  //     node('master') {
+  //       echo 'SUCCESS'
+  //     }
+  //   }
+  //   failure {
+  //     node('master') {
+  //       echo 'FAILURE'
+  //     }
+  //   }
+  //   always {
+  //     node('master') {
+  //       echo 'ENDED'
+  //     }
+  //   }
+  // }
 }
