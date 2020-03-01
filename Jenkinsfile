@@ -21,13 +21,11 @@ pipeline {
     // }
 
     /* BUILD */
-    stage('build') {
+    stage('tag-build') {
 
       when {
-        // Only for the master branch
-        tag "*"
-        //tag pattern: "v\\d+", comparator: "REGEXP"
-        //branch 'master'
+        // Only for a tag build
+        tag pattern: ".+", comparator: "REGEXP"
       }
 
       agent {
@@ -45,7 +43,34 @@ pipeline {
           /kaniko/executor \
             --dockerfile \$(pwd)/Dockerfile \
             --context \$(pwd) \
-            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${TAG_NAME} \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${TAG_NAME}
+          """
+        }
+      }
+    }
+    stage('branch-build') {
+
+      when {
+        // Only for the master branch
+        branch 'master'
+      }
+
+      agent {
+        // Execute on Kaniko Slave pod
+        kubernetes {
+          label 'kaniko-slave'
+        }
+      }
+
+      steps {
+        // Select Kaniko container inside Kaniko Slave pod
+        container('kaniko') {
+          sh 'printenv'
+          sh """
+          /kaniko/executor \
+            --dockerfile \$(pwd)/Dockerfile \
+            --context \$(pwd) \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${GIT_COMMIT} \
             --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
           """
         }
