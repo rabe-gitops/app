@@ -25,7 +25,7 @@ pipeline {
 
       when {
         // Only for a tag build
-        tag pattern: ".+", comparator: "REGEXP"
+        buildingTag()
       }
 
       agent {
