@@ -63,8 +63,8 @@ pipeline {
           }
           sh """
             /kaniko/executor \
-              --dockerfile $(pwd)/Dockerfile \
-              --context $(pwd) \
+              --dockerfile \$(pwd)/Dockerfile \
+              --context \$(pwd) \
               --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${image_tag} \
               --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
           """
