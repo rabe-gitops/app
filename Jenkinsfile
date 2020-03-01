@@ -38,12 +38,11 @@ pipeline {
       steps {
         // Select Kaniko container inside Kaniko Slave pod
         container('kaniko') {
-          sh 'printenv'
           sh """
           /kaniko/executor \
             --dockerfile \$(pwd)/Dockerfile \
             --context \$(pwd) \
-            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${TAG_NAME}
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${env.TAG_NAME}
           """
         }
       }
@@ -65,12 +64,11 @@ pipeline {
       steps {
         // Select Kaniko container inside Kaniko Slave pod
         container('kaniko') {
-          sh 'printenv'
           sh """
           /kaniko/executor \
             --dockerfile \$(pwd)/Dockerfile \
             --context \$(pwd) \
-            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${GIT_COMMIT} \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${env.GIT_COMMIT.take(7)} \
             --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
           """
         }
