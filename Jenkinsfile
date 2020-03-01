@@ -24,7 +24,7 @@ pipeline {
       }
       agent {
         kubernetes {
-          label 'image-builder-slave'
+          label 'kaniko-slave'
         }
       }
       steps {
