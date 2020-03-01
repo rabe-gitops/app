@@ -38,6 +38,7 @@ pipeline {
       steps {
         // Select Kaniko container inside Kaniko Slave pod
         container('kaniko') {
+          sh 'printenv'
           sh '''
           /kaniko/executor \
             --dockerfile `pwd`/Dockerfile \
