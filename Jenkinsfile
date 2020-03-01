@@ -25,7 +25,8 @@ pipeline {
 
       when {
         // Only for the master branch
-        tag pattern: "v\\d+", comparator: "REGEXP"
+        tag "*"
+        //tag pattern: "v\\d+", comparator: "REGEXP"
         //branch 'master'
       }
 
@@ -40,13 +41,13 @@ pipeline {
         // Select Kaniko container inside Kaniko Slave pod
         container('kaniko') {
           sh 'printenv'
-          sh '''
+          sh """
           /kaniko/executor \
-            --dockerfile $(pwd)/Dockerfile \
-            --context $(pwd) \
-            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest \
+            --dockerfile \$(pwd)/Dockerfile \
+            --context \$(pwd) \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${TAG_NAME} \
             --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
-          '''
+          """
         }
       }
     }
