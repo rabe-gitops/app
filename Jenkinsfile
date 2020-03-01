@@ -45,17 +45,17 @@ pipeline {
   // // POST-EXECUTION
   // post {
   //   success {
-  //     node('master') {
+  //     node('ci-jenkins-slave') {
   //       echo 'SUCCESS'
   //     }
   //   }
   //   failure {
-  //     node('master') {
+  //     node('ci-jenkins-slave') {
   //       echo 'FAILURE'
   //     }
   //   }
   //   always {
-  //     node('master') {
+  //     node('ci-jenkins-slave') {
   //       echo 'ENDED'
   //     }
   //   }
