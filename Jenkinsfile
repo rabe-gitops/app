@@ -23,10 +23,11 @@ pipeline {
     /* BUILD */
     stage('build') {
 
-      when {
-        // Only for the master branch
-        tag pattern: "v\\d+", comparator: "REGEXP"
-      }
+      // when {
+      //   // Only for the master branch
+      //   //tag pattern: "v\\d+", comparator: "REGEXP"
+      //   branch 'master'
+      // }
 
       agent {
         // Execute on Kaniko Slave pod
@@ -36,6 +37,7 @@ pipeline {
       }
 
       steps {
+        sh 'echo $TAG_NAME'
         // Select Kaniko container inside Kaniko Slave pod
         container('kaniko') {
           sh 'printenv'
