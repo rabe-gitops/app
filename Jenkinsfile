@@ -25,7 +25,7 @@ pipeline {
 
       when {
         // Only for the master branch
-        branch 'master'
+        tag pattern: "v\\d+", comparator: "REGEXP"
       }
 
       agent {
@@ -39,35 +39,13 @@ pipeline {
         // Select Kaniko container inside Kaniko Slave pod
         container('kaniko') {
           sh 'printenv'
-          script {
-
-            def git_tag = ''
-            def image_tag = ''
-
-            // Retrieve git tag
-            git_tag = sh (
-              returnStdout: true,
-              script: "git fetch --tags && git tag --points-at ${GIT_COMMIT} | awk NF"
-            ).trim()
-
-            // Set image tag
-            if (git_tag) {
-              image_tag = git_tag
-            }
-            else {
-              image_tag = sh (
-                returnStdout: true,
-                script: "git rev-parse --short=7 ${GIT_COMMIT}"
-              ).trim()
-            }
-          }
-          sh """
-            /kaniko/executor \
-              --dockerfile \$(pwd)/Dockerfile \
-              --context \$(pwd) \
-              --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${image_tag} \
-              --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
-          """
+          sh '''
+          /kaniko/executor \
+            --dockerfile $(pwd)/Dockerfile \
+            --context $(pwd) \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest \
+            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
+          '''
         }
       }
     }
