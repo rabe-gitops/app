@@ -3,8 +3,10 @@ pipeline {
 
   /*** ENVIRONMENT ***/
   environment {
-    PROJECT_NAME = 'rabe-gitops'
-    REPOSITORY_NAME = 'app'
+    AWS_ACCOUNT = '904573531492'
+    AWS_REGION = 'eu-west-1'
+    ECR_REPO_NAME = 'app'
+    ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
   }
 
   /*** STAGES ***/
@@ -42,7 +44,33 @@ pipeline {
           /kaniko/executor \
             --dockerfile \$(pwd)/Dockerfile \
             --context \$(pwd) \
-            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${env.TAG_NAME}
+            --destination=${env.ECR_REPO_URI}:${env.TAG_NAME}
+          """
+        }
+      }
+    }
+    stage('change-build') {
+
+      when {
+        // Only for change requests (pull/merge requests)
+        changeRequest target: 'master'
+      }
+
+      agent {
+        // Execute on Kaniko Slave pod
+        kubernetes {
+          label 'kaniko-slave'
+        }
+      }
+
+      steps {
+        // Select Kaniko container inside Kaniko Slave pod
+        container('kaniko') {
+          sh """
+          /kaniko/executor \
+            --dockerfile \$(pwd)/Dockerfile \
+            --context \$(pwd) \
+            --destination=${env.ECR_REPO_URI}:${env.CHANGE_ID}
           """
         }
       }
@@ -68,8 +96,8 @@ pipeline {
           /kaniko/executor \
             --dockerfile \$(pwd)/Dockerfile \
             --context \$(pwd) \
-            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:${env.GIT_COMMIT.take(7)} \
-            --destination=904573531492.dkr.ecr.eu-west-1.amazonaws.com/app:latest
+            --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
+            --destination=${env.ECR_REPO_URI}:latest
           """
         }
       }
