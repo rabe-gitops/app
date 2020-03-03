@@ -12,33 +12,40 @@ pipeline {
   /*** STAGES ***/
   stages {
 
-    // /* CHECKOUT */
-    // stage('checkout') {
+    // /* TEST */
+    // /* executed for all branches */
+    // stage('test') {
+
     //   agent {
     //     label 'jenkins-slave'
     //   }
+
     //   steps {
-    //     echo 'CHECKOUT'
+    //     echo 'TEST'
     //   }
     // }
 
     /* BUILD */
+    /* executed for the master branch */
     stage('tag-build') {
 
       when {
-        // Only for a tag build
-        buildingTag()
+        allOf {
+          // only for a tag build on the master branch
+          buildingTag();
+          branch 'master';
+        }
       }
 
       agent {
-        // Execute on Kaniko Slave pod
+        // execute on the 'kaniko slave' pod
         kubernetes {
           label 'kaniko-slave'
         }
       }
 
       steps {
-        // Select Kaniko container inside Kaniko Slave pod
+        // select 'kaniko' container inside the 'kaniko slave' pod
         container('kaniko') {
           sh """
           /kaniko/executor \
@@ -52,19 +59,19 @@ pipeline {
     stage('change-build') {
 
       when {
-        // Only for change requests (pull/merge requests)
+        // only for change requests (pull/merge requests)
         changeRequest target: 'master'
       }
 
       agent {
-        // Execute on Kaniko Slave pod
+        // execute on the 'kaniko slave' pod
         kubernetes {
           label 'kaniko-slave'
         }
       }
 
       steps {
-        // Select Kaniko container inside Kaniko Slave pod
+        // select 'kaniko' container inside the 'kaniko slave' pod
         container('kaniko') {
           sh """
           /kaniko/executor \
@@ -78,19 +85,19 @@ pipeline {
     stage('branch-build') {
 
       when {
-        // Only for the master branch
+        // only for the master branch
         branch 'master'
       }
 
       agent {
-        // Execute on Kaniko Slave pod
+        // execute on the 'kaniko slave' pod
         kubernetes {
           label 'kaniko-slave'
         }
       }
 
       steps {
-        // Select Kaniko container inside Kaniko Slave pod
+        // select 'kaniko' container inside the 'kaniko slave' pod
         container('kaniko') {
           sh """
           /kaniko/executor \
