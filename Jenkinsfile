@@ -12,7 +12,7 @@ pipeline {
   /*** STAGES ***/
   stages {
 
-    // /* TEST */
+    // /** TEST **/
     // /* executed for all branches */
     // stage('test') {
 
@@ -25,8 +25,12 @@ pipeline {
     //   }
     // }
 
-    /* BUILD */
-    /* executed for the master branch */
+    /** BUILD **/
+    /* executed for the master branch, in three ways:
+     * - tag builds, for new versions on the master branch
+     * - change builds, for merge requests into the master branch
+     * - push builds, for commits on the master branch
+     */
     stage('tag-build') {
 
       when {
@@ -77,7 +81,7 @@ pipeline {
           /kaniko/executor \
             --dockerfile \$(pwd)/Dockerfile \
             --context \$(pwd) \
-            --destination=${env.ECR_REPO_URI}:${env.CHANGE_ID}
+            --destination=${env.ECR_REPO_URI}:cr-${env.CHANGE_ID}
           """
         }
       }
