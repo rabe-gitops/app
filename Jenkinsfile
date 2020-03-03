@@ -12,18 +12,19 @@ pipeline {
   /*** STAGES ***/
   stages {
 
-    // /** TEST **/
-    // /* executed for all branches */
-    // stage('test') {
+    /** TEST **/
+    /* executed for all branches */
+    stage('test') {
 
-    //   agent {
-    //     label 'jenkins-slave'
-    //   }
+      agent {
+        label 'jenkins-slave'
+      }
 
-    //   steps {
-    //     echo 'TEST'
-    //   }
-    // }
+      steps {
+        echo 'TEST'
+        sh 'printenv'
+      }
+    }
 
     /** BUILD **/
     /* executed for the master branch, in three ways:
@@ -36,8 +37,8 @@ pipeline {
       when {
         allOf {
           // only for a tag build on the master branch
-          expression { env.TAG_NAME != null };
-          expression { env.BRANCH_NAME == 'master' };
+          expression { env.TAG_NAME != null }
+          expression { env.BRANCH_NAME == 'master' }
         }
       }
 
