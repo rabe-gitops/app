@@ -36,7 +36,7 @@ pipeline {
       when {
         allOf {
           // only for a tag build on the master branch
-          expression { env.TAG_NAME };
+          expression { env.TAG_NAME != null };
           expression { env.BRANCH_NAME == 'master' };
         }
       }
