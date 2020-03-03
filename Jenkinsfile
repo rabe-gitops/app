@@ -14,32 +14,29 @@ pipeline {
 
     /** TEST **/
     /* executed for all branches */
-    stage('test') {
+    // stage('test') {
 
-      agent {
-        label 'jenkins-slave'
-      }
+    //   agent {
+    //     label 'jenkins-slave'
+    //   }
 
-      steps {
-        echo 'TEST'
-        sh 'printenv'
-      }
-    }
+    //   steps {
+    //     echo 'TEST'
+    //     sh 'printenv'
+    //   }
+    // }
 
     /** BUILD **/
-    /* executed for the master branch, in three ways:
-     * - tag builds, for new versions on the master branch
+    /* executed in three ways:
+     * - tag builds, for new software versions
      * - change builds, for merge requests into the master branch
      * - push builds, for commits on the master branch
      */
     stage('tag-build') {
 
       when {
-        allOf {
-          // only for a tag build on the master branch
-          expression { env.TAG_NAME != null }
-          expression { env.BRANCH_NAME == 'master' }
-        }
+        // only for a tag build
+        buildingTag()
       }
 
       agent {
