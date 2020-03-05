@@ -35,8 +35,8 @@ pipeline {
       environment {
         ECR_REPO_NAME = 'app'
         ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
-        GIT_MANIFESTS_REPO = 'https://github.com/rabe-gitops/manifests.git'
       }
+
       parallel {
 
         stage('tag-build') {
@@ -47,22 +47,63 @@ pipeline {
             buildingTag()
           }
 
-          agent {
-            // execute on the 'kaniko slave' pod
-            kubernetes {
-              label 'kaniko-slave'
-            }
-          }
+          stages {
 
-          steps {
-            // select 'kaniko' container inside the 'kaniko slave' pod
-            container('kaniko') {
-              sh """
-              /kaniko/executor \
-                --dockerfile \$(pwd)/Dockerfile \
-                --context \$(pwd) \
-                --destination=${env.ECR_REPO_URI}:${env.TAG_NAME}
-              """
+            stage('build-image') {
+
+              agent {
+                // execute on the 'kaniko slave' pod
+                kubernetes {
+                  label 'kaniko-slave'
+                }
+              }
+
+              steps {
+                // select 'kaniko' container inside the 'kaniko slave' pod
+                container('kaniko') {
+                  sh """
+                    /kaniko/executor \
+                      --dockerfile \$(pwd)/Dockerfile \
+                      --context \$(pwd) \
+                      --destination=${env.ECR_REPO_URI}:${env.TAG_NAME}
+                  """
+                }
+              }
+            }
+
+            stage('update-manifests') {
+
+              environment {
+                GIT_MANIFESTS_REPO_URI = 'github.com/rabe-gitops/manifests.git'
+                GIT_MANIFESTS_REPO_NAME = 'manifests'
+                APP_MANIFEST_FILE_NAME = 'app-deployment.yaml'
+                GIT_USERNAME = 'claudioscalzo'
+                GIT_EMAIL = 'c.scalzo@outlook.com'
+              }
+
+              agent {
+                label 'jenkins-slave'
+              }
+
+              steps {
+
+                withCredentials([string(
+                  credentialsId: 'rabe-gitops-jenkinsci',
+                  variable: 'GIT_TOKEN'
+                )]) {
+                  sh """
+                    git clone https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
+                    cd ${env.GIT_MANIFESTS_REPO_NAME}
+                    sed -i 's/image: .*/image: /g' base/${env.APP_MANIFEST_FILE_NAME}
+                    git config user.name ${env.GIT_USERNAME}
+                    git config user.email ${env.GIT_EMAIL}
+                    git add .
+                    git commit -m "Update base image version"
+                    git tag ${env.TAG_NAME}
+                    git push origin master --tags
+                  """
+                }
+              }
             }
           }
         }
@@ -86,10 +127,10 @@ pipeline {
             // select 'kaniko' container inside the 'kaniko slave' pod
             container('kaniko') {
               sh """
-              /kaniko/executor \
-                --dockerfile \$(pwd)/Dockerfile \
-                --context \$(pwd) \
-                --destination=${env.ECR_REPO_URI}:cr-${env.CHANGE_ID}
+                /kaniko/executor \
+                  --dockerfile \$(pwd)/Dockerfile \
+                  --context \$(pwd) \
+                  --destination=${env.ECR_REPO_URI}:cr-${env.CHANGE_ID}
               """
             }
           }
@@ -114,16 +155,21 @@ pipeline {
             // select 'kaniko' container inside the 'kaniko slave' pod
             container('kaniko') {
               sh """
-              /kaniko/executor \
-                --dockerfile \$(pwd)/Dockerfile \
-                --context \$(pwd) \
-                --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
-                --destination=${env.ECR_REPO_URI}:latest
+                /kaniko/executor \
+                  --dockerfile \$(pwd)/Dockerfile \
+                  --context \$(pwd) \
+                  --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
+                  --destination=${env.ECR_REPO_URI}:latest
               """
             }
           }
         }
       }
+    }
+
+    stage('update-manifests') {
+
+      when 
     }
   }
 
