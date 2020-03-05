@@ -1,12 +1,10 @@
 pipeline {
   agent none
 
-  /*** ENVIRONMENT ***/
+  /*** PIPELINE ENVIRONMENT ***/
   environment {
     AWS_ACCOUNT = '904573531492'
     AWS_REGION = 'eu-west-1'
-    ECR_REPO_NAME = 'app'
-    ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
   }
 
   /*** STAGES ***/
@@ -14,17 +12,18 @@ pipeline {
 
     /** TEST **/
     /* executed for all branches */
-    // stage('test') {
+    stage('test') {
 
-    //   agent {
-    //     label 'jenkins-slave'
-    //   }
+      agent {
+        label 'jenkins-slave'
+      }
 
-    //   steps {
-    //     echo 'TEST'
-    //     sh 'printenv'
-    //   }
-    // }
+      steps {
+        echo 'TEST'
+        sh 'printenv'
+        sh 'git --version'
+      }
+    }
 
     /** BUILD **/
     /* executed in three ways:
@@ -32,86 +31,98 @@ pipeline {
      * - change builds, for merge requests into the master branch
      * - push builds, for commits on the master branch
      */
-    stage('tag-build') {
+    stage('build') {
 
-      when {
-        // only for a tag build
-        buildingTag()
+      environment {
+        ECR_REPO_NAME = 'app'
+        ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+        GIT_MANIFESTS_REPO = 'https://github.com/rabe-gitops/manifests.git'
       }
+      parallel {
 
-      agent {
-        // execute on the 'kaniko slave' pod
-        kubernetes {
-          label 'kaniko-slave'
+        stage('tag-build') {
+
+          when {
+            // only for a tag build
+            buildingTag()
+          }
+
+          agent {
+            // execute on the 'kaniko slave' pod
+            kubernetes {
+              label 'kaniko-slave'
+            }
+          }
+
+          steps {
+            // select 'kaniko' container inside the 'kaniko slave' pod
+            container('kaniko') {
+              sh """
+              /kaniko/executor \
+                --dockerfile \$(pwd)/Dockerfile \
+                --context \$(pwd) \
+                --destination=${env.ECR_REPO_URI}:${env.TAG_NAME}
+              """
+            }
+          }
         }
-      }
 
-      steps {
-        // select 'kaniko' container inside the 'kaniko slave' pod
-        container('kaniko') {
-          sh """
-          /kaniko/executor \
-            --dockerfile \$(pwd)/Dockerfile \
-            --context \$(pwd) \
-            --destination=${env.ECR_REPO_URI}:${env.TAG_NAME}
-          """
+        stage('change-build') {
+
+          when {
+            // only for change requests (pull/merge requests)
+            changeRequest target: 'master'
+          }
+
+          agent {
+            // execute on the 'kaniko slave' pod
+            kubernetes {
+              label 'kaniko-slave'
+            }
+          }
+
+          steps {
+            // select 'kaniko' container inside the 'kaniko slave' pod
+            container('kaniko') {
+              sh """
+              /kaniko/executor \
+                --dockerfile \$(pwd)/Dockerfile \
+                --context \$(pwd) \
+                --destination=${env.ECR_REPO_URI}:cr-${env.CHANGE_ID}
+              """
+            }
+          }
+        }
+
+        stage('branch-build') {
+
+          when {
+            // only for the master branch
+            branch 'master'
+          }
+
+          agent {
+            // execute on the 'kaniko slave' pod
+            kubernetes {
+              label 'kaniko-slave'
+            }
+          }
+
+          steps {
+            // select 'kaniko' container inside the 'kaniko slave' pod
+            container('kaniko') {
+              sh """
+              /kaniko/executor \
+                --dockerfile \$(pwd)/Dockerfile \
+                --context \$(pwd) \
+                --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
+                --destination=${env.ECR_REPO_URI}:latest
+              """
+            }
+          }
         }
       }
     }
-    stage('change-build') {
-
-      when {
-        // only for change requests (pull/merge requests)
-        changeRequest target: 'master'
-      }
-
-      agent {
-        // execute on the 'kaniko slave' pod
-        kubernetes {
-          label 'kaniko-slave'
-        }
-      }
-
-      steps {
-        // select 'kaniko' container inside the 'kaniko slave' pod
-        container('kaniko') {
-          sh """
-          /kaniko/executor \
-            --dockerfile \$(pwd)/Dockerfile \
-            --context \$(pwd) \
-            --destination=${env.ECR_REPO_URI}:cr-${env.CHANGE_ID}
-          """
-        }
-      }
-    }
-    stage('branch-build') {
-
-      when {
-        // only for the master branch
-        branch 'master'
-      }
-
-      agent {
-        // execute on the 'kaniko slave' pod
-        kubernetes {
-          label 'kaniko-slave'
-        }
-      }
-
-      steps {
-        // select 'kaniko' container inside the 'kaniko slave' pod
-        container('kaniko') {
-          sh """
-          /kaniko/executor \
-            --dockerfile \$(pwd)/Dockerfile \
-            --context \$(pwd) \
-            --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
-            --destination=${env.ECR_REPO_URI}:latest
-          """
-        }
-      }
-    }
-
   }
 
   // /*** POST-EXECUTION ***/
