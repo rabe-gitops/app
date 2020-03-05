@@ -12,18 +12,17 @@ pipeline {
 
     /** TEST **/
     /* executed for all branches */
-    stage('test') {
+    // stage('test') {
 
-      agent {
-        label 'jenkins-slave'
-      }
+    //   agent {
+    //     label 'jenkins-slave'
+    //   }
 
-      steps {
-        echo 'TEST'
-        sh 'printenv'
-        sh 'git --version'
-      }
-    }
+    //   steps {
+    //     echo 'TEST'
+    //     sh 'printenv'
+    //   }
+    // }
 
     /** BUILD **/
     /* executed in three ways:
@@ -44,6 +43,7 @@ pipeline {
 
           when {
             // only for a tag build
+            beforeAgent true
             buildingTag()
           }
 
@@ -71,6 +71,7 @@ pipeline {
 
           when {
             // only for change requests (pull/merge requests)
+            beforeAgent true
             changeRequest target: 'master'
           }
 
@@ -98,6 +99,7 @@ pipeline {
 
           when {
             // only for the master branch
+            beforeAgent true
             branch 'master'
           }
 
