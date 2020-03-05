@@ -166,11 +166,6 @@ pipeline {
         }
       }
     }
-
-    stage('update-manifests') {
-
-      when 
-    }
   }
 
   // /*** POST-EXECUTION ***/
