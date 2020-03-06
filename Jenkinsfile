@@ -92,7 +92,7 @@ pipeline {
                   variable: 'GIT_TOKEN'
                 )]) {
                   sh """
-                    git clone https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
+                    git clone -b master --single-branch https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
                     cd ${env.GIT_MANIFESTS_REPO_NAME}
                     sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${env.TAG_NAME}|g' base/${env.APP_MANIFEST_FILE_NAME}
                     git config user.name ${env.GIT_USERNAME}
