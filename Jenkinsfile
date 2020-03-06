@@ -98,7 +98,7 @@ pipeline {
                     git config user.name ${env.GIT_USERNAME}
                     git config user.email ${env.GIT_EMAIL}
                     git add .
-                    git commit -m "Update base image version"
+                    git commit -m "Update base image with version ${env.TAG_NAME}"
                     git tag ${env.TAG_NAME}
                     git push origin master --tags
                   """
