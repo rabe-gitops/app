@@ -92,6 +92,7 @@ pipeline {
                   variable: 'GIT_TOKEN'
                 )]) {
                   sh """
+                    latest_infr_tag=\$(git ls-remote --tags --refs --sort="v:refname" https://${env.GIT_MANIFESTS_REPO_URI} | tail -n1 | sed 's|.*/||g')
                     git clone -b master --single-branch https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
                     cd ${env.GIT_MANIFESTS_REPO_NAME}
                     sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${env.TAG_NAME}|g' base/${env.APP_MANIFEST_FILE_NAME}
@@ -99,7 +100,7 @@ pipeline {
                     git config user.email ${env.GIT_EMAIL}
                     git add .
                     git commit -m "Update base image with version ${env.TAG_NAME}"
-                    git tag ${env.TAG_NAME}
+                    git tag app-${env.TAG_NAME}@\${latest_infr_tag}
                     git push origin master --tags
                   """
                 }
