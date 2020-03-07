@@ -10,159 +10,124 @@ pipeline {
   /*** STAGES ***/
   stages {
 
-    /** TEST **/
-    /* executed for all branches */
-    // stage('test') {
+    lock("${env.GIT_COMMIT}") {
 
-    //   agent {
-    //     label 'jenkins-slave'
-    //   }
+      /** TEST **/
+      /* executed for all branches */
+      // stage('test') {
 
-    //   steps {
-    //     echo 'TEST'
-    //     sh 'printenv'
-    //   }
-    // }
+      //   agent {
+      //     label 'jenkins-slave'
+      //   }
 
-    /** BUILD **/
-    /* executed in three ways:
-     * - tag builds, for new software versions
-     * - change builds, for merge requests into the master branch
-     * - push builds, for commits on the master branch
-     */
-    stage('build') {
+      //   steps {
+      //     echo 'TEST'
+      //     sh 'printenv'
+      //   }
+      // }
 
-      environment {
-        ECR_REPO_NAME = 'app'
-        ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
-      }
+      /** BUILD **/
+      /* executed in three ways:
+      * - tag builds, for new software versions
+      * - push builds, for commits on the master branch
+      */
+      stage('build') {
 
-      parallel {
+        environment {
+          ECR_REPO_NAME = 'app'
+          ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+        }
 
-        stage('tag-build') {
+        parallel {
 
-          when {
-            // only for a tag build
-            beforeAgent true
-            buildingTag()
+          stage('branch-build') {
+
+            when {
+              // only for the master branch
+              beforeAgent true
+              branch 'master'
+            }
+
+            agent {
+              // execute on the 'kaniko slave' pod
+              kubernetes {
+                label 'kaniko-slave'
+              }
+            }
+
+            steps {
+              // select 'kaniko' container inside the 'kaniko slave' pod
+              container('kaniko') {
+                sh """
+                  /kaniko/executor \
+                    --dockerfile \$(pwd)/Dockerfile \
+                    --context \$(pwd) \
+                    --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
+                    --destination=${env.ECR_REPO_URI}:latest
+                """
+              }
+            }
           }
 
-          stages {
+          stage('tag-build') {
 
-            stage('build-image') {
+            when {
+              // only for a tag build
+              beforeAgent true
+              buildingTag()
+            }
+
+            stage('add-tag') {
 
               agent {
-                // execute on the 'kaniko slave' pod
-                kubernetes {
-                  label 'kaniko-slave'
-                }
+                label 'amazon-slave'
               }
 
               steps {
                 // select 'kaniko' container inside the 'kaniko slave' pod
-                container('kaniko') {
+                container('amazonlinux') {
                   sh """
-                    /kaniko/executor \
-                      --dockerfile \$(pwd)/Dockerfile \
-                      --context \$(pwd) \
-                      --destination=${env.ECR_REPO_URI}:${env.TAG_NAME}
-                  """
-                }
-              }
-            }
-
-            stage('update-manifests') {
-
-              environment {
-                GIT_MANIFESTS_REPO_URI = 'github.com/rabe-gitops/manifests.git'
-                GIT_MANIFESTS_REPO_NAME = 'manifests'
-                APP_MANIFEST_FILE_NAME = 'app-deployment.yaml'
-                GIT_USERNAME = 'jenkinsci'
-                GIT_EMAIL = 'jenkins.ci@rabe.gitops.it'
-              }
-
-              agent {
-                label 'jenkins-slave'
-              }
-
-              steps {
-
-                withCredentials([string(
-                  credentialsId: 'rabe-gitops-jenkinsci',
-                  variable: 'GIT_TOKEN'
-                )]) {
-                  sh """
-                    latest_infr_tag=\$(git ls-remote --tags --refs --sort="v:refname" https://${env.GIT_MANIFESTS_REPO_URI} | tail -n1 | sed 's|.*/||g')
-                    git clone -b master --single-branch https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
-                    cd ${env.GIT_MANIFESTS_REPO_NAME}
-                    sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${env.TAG_NAME}|g' base/${env.APP_MANIFEST_FILE_NAME}
-                    git config user.name ${env.GIT_USERNAME}
-                    git config user.email ${env.GIT_EMAIL}
-                    git add .
-                    git commit -m "Update base image with version ${env.TAG_NAME}"
-                    git tag app-${env.TAG_NAME}@\${latest_infr_tag}
-                    git push origin master --tags
+                    manifest=$(aws ecr batch-get-image --repository-name ${env.ECR_REPO_NAME} --image-ids imageTag=${env.GIT_COMMIT} --region ${env.AWS_REGION} --query images[].imageManifest --output text)
+                    aws ecr put-image --repository-name ${env.ECR_REPO_NAME} --image-tag ${env.TAG_NAME} --image-manifest "\${manifest}" --region ${env.AWS_REGION}
                   """
                 }
               }
             }
           }
         }
+      }
 
-        stage('change-build') {
+      stage('update-manifests') {
 
-          when {
-            // only for change requests (pull/merge requests)
-            beforeAgent true
-            changeRequest target: 'master'
-          }
-
-          agent {
-            // execute on the 'kaniko slave' pod
-            kubernetes {
-              label 'kaniko-slave'
-            }
-          }
-
-          steps {
-            // select 'kaniko' container inside the 'kaniko slave' pod
-            container('kaniko') {
-              sh """
-                /kaniko/executor \
-                  --dockerfile \$(pwd)/Dockerfile \
-                  --context \$(pwd) \
-                  --destination=${env.ECR_REPO_URI}:cr-${env.CHANGE_ID}
-              """
-            }
-          }
+        environment {
+          GIT_MANIFESTS_REPO_URI = 'github.com/rabe-gitops/manifests.git'
+          GIT_MANIFESTS_REPO_NAME = 'manifests'
+          APP_MANIFEST_FILE_NAME = 'app-deployment.yaml'
+          GIT_USERNAME = 'jenkinsci'
+          GIT_EMAIL = 'jenkins.ci@rabe.gitops.it'
         }
 
-        stage('branch-build') {
+        agent {
+          label 'jenkins-slave'
+        }
 
-          when {
-            // only for the master branch
-            beforeAgent true
-            branch 'master'
-          }
+        steps {
 
-          agent {
-            // execute on the 'kaniko slave' pod
-            kubernetes {
-              label 'kaniko-slave'
-            }
-          }
-
-          steps {
-            // select 'kaniko' container inside the 'kaniko slave' pod
-            container('kaniko') {
-              sh """
-                /kaniko/executor \
-                  --dockerfile \$(pwd)/Dockerfile \
-                  --context \$(pwd) \
-                  --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
-                  --destination=${env.ECR_REPO_URI}:latest
-              """
-            }
+          withCredentials([string(
+            credentialsId: 'rabe-gitops-jenkinsci',
+            variable: 'GIT_TOKEN'
+          )]) {
+            sh """
+              git clone -b master --single-branch https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
+              cd ${env.GIT_MANIFESTS_REPO_NAME}
+              sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${env.TAG_NAME}|g' base/${env.APP_MANIFEST_FILE_NAME}
+              git config user.name ${env.GIT_USERNAME}
+              git config user.email ${env.GIT_EMAIL}
+              git add .
+              git commit -m "Update base image with version ${env.TAG_NAME}"
+              git tag ${env.TAG_NAME}
+              git push origin master --tags
+            """
           }
         }
       }
