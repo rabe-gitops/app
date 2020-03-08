@@ -27,10 +27,10 @@ pipeline {
     // }
 
     /** BUILD **/
-    /* executed in three ways:
-    * - tag builds, for new software versions
-    * - push builds, for commits on the master branch
-    */
+    /* executed in two ways:
+     * - tag builds, for new software releases
+     * - push builds, for commits (i.e. merges from feature branches) on master
+     */
     stage('image-build') {
 
       options {
@@ -55,7 +55,7 @@ pipeline {
           }
 
           steps {
-            // select 'kaniko' container inside the 'kaniko slave' pod
+            // select the 'kaniko' container inside the 'kaniko slave' pod
             container('kaniko') {
               sh """
                 pwd
@@ -78,11 +78,12 @@ pipeline {
           }
 
           agent {
+            // execute on the 'amazon slave' pod
             label 'amazon-slave'
           }
 
           steps {
-            // select 'kaniko' container inside the 'kaniko slave' pod
+            // select the 'awscli' container inside the 'amazon slave' pod
             container('awscli') {
               sh """
                 manifest=\$(aws ecr batch-get-image --repository-name ${env.ECR_REPO_NAME} --image-ids imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION} --query images[].imageManifest --output text)
@@ -107,12 +108,12 @@ pipeline {
       }
 
       agent {
+        // execute on the 'jenkins slave' pod
         label 'jenkins-slave'
       }
 
       steps {
         
-        sh 'printenv'
         withCredentials([string(
           credentialsId: 'rabe-gitops-jenkinsci',
           variable: 'GIT_TOKEN'
