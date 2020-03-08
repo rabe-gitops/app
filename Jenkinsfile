@@ -98,13 +98,11 @@ pipeline {
     stage('update-manifests') {
 
       environment {
-        GIT_COMMIT_SHORT = sh(script: "printf \$(git rev-parse --short ${GIT_COMMIT})", returnStdout: true)
         GIT_MANIFESTS_REPO_URI = 'github.com/rabe-gitops/manifests.git'
         GIT_MANIFESTS_REPO_NAME = 'manifests'
         APP_MANIFEST_FILE_NAME = 'app-deployment.yaml'
         GIT_USERNAME = 'jenkinsci'
         GIT_EMAIL = 'jenkins.ci@rabe.gitops.it'
-        IMAGE_TAG = "${TAG_NAME != null ? TAG_NAME : GIT_COMMIT_SHORT}"
       }
 
       agent {
@@ -119,14 +117,15 @@ pipeline {
           variable: 'GIT_TOKEN'
         )]) {
           sh """
+            IMAGE_TAG=\$(if [ ${TAG_NAME} ]; then printf "rel-${TAG_NAME}"; else printf "app-${GIT_COMMIT.take(7)}"; fi)
             git clone -b master --single-branch https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
             cd ${env.GIT_MANIFESTS_REPO_NAME}
             sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${env.IMAGE_TAG}|g' base/${env.APP_MANIFEST_FILE_NAME}
             git config user.name ${env.GIT_USERNAME}
             git config user.email ${env.GIT_EMAIL}
             git add .
-            git diff-index --quiet HEAD || git commit -m "Update base image with version ${env.IMAGE_TAG}"
-            git tag ${env.IMAGE_TAG}
+            git diff-index --quiet HEAD || git commit -m "Update base image with version '\${IMAGE_TAG}'"
+            git tag \${IMAGE_TAG}
             git push origin master --tags
           """
         }
