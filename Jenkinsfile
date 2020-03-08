@@ -100,7 +100,7 @@ pipeline {
       environment {
         GIT_MANIFESTS_REPO_URI = 'github.com/rabe-gitops/manifests.git'
         GIT_MANIFESTS_REPO_NAME = 'manifests'
-        APP_MANIFEST_FILE_NAME = 'app-deployment.yaml'
+        APP_MANIFEST_FILE = 'base/app-deployment.yaml'
         GIT_USERNAME = 'jenkinsci'
         GIT_EMAIL = 'jenkins.ci@rabe.gitops.it'
       }
@@ -117,15 +117,16 @@ pipeline {
           variable: 'GIT_TOKEN'
         )]) {
           sh """
-            IMAGE_TAG=\$(if [ ${TAG_NAME} ]; then printf "rel-${TAG_NAME}"; else printf "app-${GIT_COMMIT.take(7)}"; fi)
-            git clone -b master --single-branch https://${GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
+            IMAGE_TAG=\$(if [ \${TAG_NAME} ]; then printf "\${TAG_NAME}"; else printf "${env.GIT_COMMIT.take(7)}"; fi)
+            IMAGE_TAG_PREFIX=\$(if [ \${TAG_NAME} ]; then printf "rel"; else printf "app"; fi)
+            git clone -b master --single-branch https://${env.GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
             cd ${env.GIT_MANIFESTS_REPO_NAME}
-            sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${env.IMAGE_TAG}|g' base/${env.APP_MANIFEST_FILE_NAME}
+            sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:\${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
             git config user.name ${env.GIT_USERNAME}
             git config user.email ${env.GIT_EMAIL}
             git add .
             git diff-index --quiet HEAD || git commit -m "Update base image with version '\${IMAGE_TAG}'"
-            git tag \${IMAGE_TAG}
+            git tag \${IMAGE_TAG_PREFIX}-\${IMAGE_TAG}
             git push origin master --tags
           """
         }
