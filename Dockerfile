@@ -1,11 +1,7 @@
 # BUILD STAGE
 FROM node:13.8.0-alpine AS build-stage
+COPY . /usr/local/app/
 WORKDIR /usr/local/app/
-COPY package.json ./
-COPY yarn.lock ./
-COPY vue.config.js ./
-COPY src/ ./src/
-COPY public/ ./public/
 RUN yarn install --frozen-lockfile
 RUN yarn run build
 

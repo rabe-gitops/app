@@ -1,0 +1,10 @@
+.git/
+.gitignore
+.dockerignore
+.DS_Store
+Dockerfile
+Jenkinsfile
+LICENSE
+README.md
+node_modules/
+dist/
