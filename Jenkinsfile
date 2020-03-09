@@ -48,8 +48,10 @@ pipeline {
 
           steps {
             sh 'printenv'
-            waitUntil {
-              env.LOCKED_RESOURCE
+            script {
+              waitUntil {
+                env.LOCKED_RESOURCE != null
+              }
             }
           }
         }
