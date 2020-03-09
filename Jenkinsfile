@@ -87,8 +87,10 @@ pipeline {
             // select the 'awscli' container inside the 'amazon slave' pod
             container('awscli') {
               script {
+                // this step depends on the branch build one; lock can't be used in this case; poll on ECR
                 timeout(300) {
                   waitUntil {
+                    sleep(10)
                     sh(script: """
                         aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION}
                       """, returnStatus: true
