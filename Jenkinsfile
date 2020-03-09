@@ -13,18 +13,48 @@ pipeline {
   stages {
 
     /** TEST **/
-    /* executed for all branches */
-    // stage('test') {
+    /* executed for all branches, but not for building tags */
+    stage('unit-testing') {
 
-    //   agent {
-    //     label 'jenkins-slave'
-    //   }
+      parallel {
 
-    //   steps {
-    //     echo 'TEST'
-    //     sh 'printenv'
-    //   }
-    // }
+        stage('test') {
+
+          when {
+            beforeAgent true
+            not { buildingTag() }
+          }
+
+          agent {
+            label 'jenkins-slave' // image: jenkins/jnlp-slave:alpine
+          }
+
+          steps {
+            sh 'printenv'
+            echo 'TODO: UNIT TESTING'
+          }
+        }
+
+        stage('tag-test') {
+
+          when {
+            beforeAgent true
+            buildingTag()
+          }
+
+          agent {
+            label 'amazon-slave' // image: mesosphere/aws-cli
+          }
+
+          steps {
+            sh 'printenv'
+            waitUntil {
+              env.LOCKED_RESOURCE
+            }
+          }
+        }
+      }
+    }
 
     /** BUILD **/
     /* executed in two ways:
@@ -34,7 +64,7 @@ pipeline {
     stage('image-build') {
 
       options {
-        lock (resource: 'IMAGE_BUILD_LOCK')
+        lock (resource: 'IMAGE_BUILD_LOCK', variable: 'LOCKED_RESOURCE')
       }
 
       parallel {
@@ -96,6 +126,14 @@ pipeline {
     }
 
     stage('update-manifests') {
+
+      when {
+        beforeAgent true
+        anyOf {
+          branch 'master'
+          buildingTag()
+        }
+      }
 
       environment {
         GIT_MANIFESTS_REPO_URI = 'github.com/rabe-gitops/manifests.git'
