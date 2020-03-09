@@ -50,7 +50,7 @@ pipeline {
           agent {
             // execute on the 'kaniko slave' pod
             kubernetes {
-              label 'kaniko-slave'
+              label 'kaniko-slave' // image: gcr.io/kaniko-project/executor:debug
             }
           }
 
@@ -79,7 +79,7 @@ pipeline {
 
           agent {
             // execute on the 'amazon slave' pod
-            label 'amazon-slave'
+            label 'amazon-slave' // image: mesosphere/aws-cli
           }
 
           steps {
@@ -107,7 +107,7 @@ pipeline {
 
       agent {
         // execute on the 'jenkins slave' pod
-        label 'jenkins-slave'
+        label 'jenkins-slave' // image: jenkins/jnlp-slave:alpine
       }
 
       steps {
@@ -116,19 +116,25 @@ pipeline {
           credentialsId: 'rabe-gitops-jenkinsci',
           variable: 'GIT_TOKEN'
         )]) {
-          sh """
-            IMAGE_TAG=\$(if [ \${TAG_NAME} ]; then printf "\${TAG_NAME}"; else printf "${env.GIT_COMMIT.take(7)}"; fi)
-            IMAGE_TAG_PREFIX=\$(if [ \${TAG_NAME} ]; then printf "rel"; else printf "app"; fi)
-            git clone -b master --single-branch https://${env.GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
-            cd ${env.GIT_MANIFESTS_REPO_NAME}
-            sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:\${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
-            git config user.name ${env.GIT_USERNAME}
-            git config user.email ${env.GIT_EMAIL}
-            git add .
-            git diff-index --quiet HEAD || git commit -m "Update base image with version '\${IMAGE_TAG}'"
-            git tag \${IMAGE_TAG_PREFIX}-\${IMAGE_TAG}
-            git push origin master --tags
-          """
+          script {
+            def IMAGE_TAG = env.GIT_COMMIT.take(7)
+            def IMAGE_TAG_PREFIX = 'app'
+            if (env.TAG_NAME) {
+              IMAGE_TAG = env.TAG_NAME
+              IMAGE_TAG_PREFIX = 'rel'
+            }
+            sh """
+              git clone -b master --single-branch https://${env.GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
+              cd ${env.GIT_MANIFESTS_REPO_NAME}
+              sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
+              git config user.name ${env.GIT_USERNAME}
+              git config user.email ${env.GIT_EMAIL}
+              git add .
+              git diff-index --quiet HEAD || git commit -m "Update base image with version '${IMAGE_TAG}'"
+              git tag ${IMAGE_TAG_PREFIX}-${IMAGE_TAG}
+              git push origin master --tags
+            """
+          }
         }
       }
     }
