@@ -89,7 +89,7 @@ pipeline {
               script {
                 waitUntil {
                   sh(script: """
-                      aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)}
+                      aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION}
                     """, returnStatus: true
                   ) == 0
                 }
