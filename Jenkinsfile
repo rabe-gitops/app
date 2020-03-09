@@ -16,45 +16,18 @@ pipeline {
     /* executed for all branches, but not for building tags */
     stage('unit-testing') {
 
-      parallel {
+      when {
+        beforeAgent true
+        not { buildingTag() }
+      }
 
-        stage('test') {
+      agent {
+        label 'jenkins-slave' // image: jenkins/jnlp-slave:alpine
+      }
 
-          when {
-            beforeAgent true
-            not { buildingTag() }
-          }
-
-          agent {
-            label 'jenkins-slave' // image: jenkins/jnlp-slave:alpine
-          }
-
-          steps {
-            sh 'printenv'
-            echo 'TODO: UNIT TESTING'
-          }
-        }
-
-        stage('tag-test') {
-
-          when {
-            beforeAgent true
-            buildingTag()
-          }
-
-          agent {
-            label 'amazon-slave' // image: mesosphere/aws-cli
-          }
-
-          steps {
-            sh 'printenv'
-            script {
-              waitUntil {
-                env.LOCKED_RESOURCE != null
-              }
-            }
-          }
-        }
+      steps {
+        sh 'printenv'
+        echo 'TODO: UNIT TESTING'
       }
     }
 
@@ -64,10 +37,6 @@ pipeline {
      * - push builds, for commits (i.e. merges from feature branches) on master
      */
     stage('image-build') {
-
-      options {
-        lock (resource: 'IMAGE_BUILD_LOCK', variable: 'LOCKED_RESOURCE')
-      }
 
       parallel {
 
@@ -117,6 +86,14 @@ pipeline {
           steps {
             // select the 'awscli' container inside the 'amazon slave' pod
             container('awscli') {
+              script {
+                waitUntil {
+                  sh(script: """
+                      aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)}
+                    """, returnStatus: true
+                  ) == 0
+                }
+              }
               sh """
                 manifest=\$(aws ecr batch-get-image --repository-name ${env.ECR_REPO_NAME} --image-ids imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION} --query 'images[].imageManifest' --output text)
                 aws ecr put-image --repository-name ${env.ECR_REPO_NAME} --image-tag ${env.TAG_NAME} --image-manifest "\${manifest}" --region ${env.AWS_REGION}
