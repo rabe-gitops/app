@@ -87,17 +87,19 @@ pipeline {
             // select the 'awscli' container inside the 'amazon slave' pod
             container('awscli') {
               script {
-                waitUntil {
-                  sh(script: """
-                      aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION}
-                    """, returnStatus: true
-                  ) == 0
+                timeout(300) {
+                  waitUntil {
+                    sh(script: """
+                        aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION}
+                      """, returnStatus: true
+                    ) == 0
+                  }
                 }
+                sh """
+                  manifest=\$(aws ecr batch-get-image --repository-name ${env.ECR_REPO_NAME} --image-ids imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION} --query 'images[].imageManifest' --output text)
+                  aws ecr put-image --repository-name ${env.ECR_REPO_NAME} --image-tag ${env.TAG_NAME} --image-manifest "\${manifest}" --region ${env.AWS_REGION}
+                """
               }
-              sh """
-                manifest=\$(aws ecr batch-get-image --repository-name ${env.ECR_REPO_NAME} --image-ids imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION} --query 'images[].imageManifest' --output text)
-                aws ecr put-image --repository-name ${env.ECR_REPO_NAME} --image-tag ${env.TAG_NAME} --image-manifest "\${manifest}" --region ${env.AWS_REGION}
-              """
             }
           }
         }
@@ -105,6 +107,10 @@ pipeline {
     }
 
     stage('update-manifests') {
+
+      options {
+        lock (resource: 'UPDATE_MANIFESTS_LOCK')
+      }
 
       when {
         beforeAgent true
