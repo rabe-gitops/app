@@ -126,8 +126,7 @@ pipeline {
         GIT_MANIFESTS_REPO_URI = 'github.com/rabe-gitops/manifests.git'
         GIT_MANIFESTS_REPO_NAME = 'manifests'
         APP_MANIFEST_FILE = 'base/app-deployment.yaml'
-        GIT_USERNAME = 'jenkinsci'
-        GIT_EMAIL = 'jenkins.ci@rabe.gitops.it'
+        GIT_USERNAME = 'rabe-gitops-bot'
       }
 
       agent {
@@ -137,9 +136,10 @@ pipeline {
 
       steps {
         
-        withCredentials([string(
+        withCredentials([usernamePassword(
           credentialsId: 'rabe-gitops-jenkinsci',
-          variable: 'GIT_TOKEN'
+          usernameVariable: 'GIT_EMAIL',
+          passwordVariable: 'GIT_TOKEN'
         )]) {
           script {
             def IMAGE_TAG = env.GIT_COMMIT.take(7)
@@ -153,7 +153,7 @@ pipeline {
               cd ${env.GIT_MANIFESTS_REPO_NAME}
               sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
               git config user.name ${env.GIT_USERNAME}
-              git config user.email ${env.GIT_EMAIL}
+              git config user.email ${GIT_EMAIL}
               git add .
               git diff-index --quiet HEAD || git commit -m "Update base image with version '${IMAGE_TAG}'"
               git tag ${IMAGE_TAG_PREFIX}-${IMAGE_TAG}
