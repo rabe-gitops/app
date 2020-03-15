@@ -11,12 +11,9 @@ spec:
       image: jenkins/jnlp-slave:4.0.1-1-alpine
       command:
         - cat
-      args:
-        - ${computer.jnlpmac}
-        - ${computer.name}
       tty: true
       imagePullPolicy: IfNotPresent
       resources:
         limits:
-          cpu: 1000m
-          memory: 512Mi
+          cpu: 2000m
+          memory: 1024Mi

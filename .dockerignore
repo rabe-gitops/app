@@ -8,9 +8,6 @@ README.md
 .dockerignore
 Dockerfile
 
-# macOS
-.DS_Store
-
 # Jenkins
 Jenkinsfile
 slaves/
@@ -18,3 +15,6 @@ slaves/
 # Node.js
 node_modules/
 dist/
+
+# macOS
+.DS_Store
