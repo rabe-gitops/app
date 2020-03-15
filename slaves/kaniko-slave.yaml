@@ -13,10 +13,6 @@ spec:
         - cat
       tty: true
       imagePullPolicy: IfNotPresent
-      resources:
-        limits:
-          cpu: 2000m
-          memory: 1024Mi
       volumeMounts:
         - name: docker-config
           mountPath: /kaniko/.docker
