@@ -24,12 +24,12 @@ pipeline {
 
       agent {
         kubernetes {
-          yamlFile "${SLAVES_TEMPLATES_PATH}/nodejs-slave.yaml"
+          yamlFile "${SLAVES_TEMPLATES_PATH}/cypress-slave.yaml"
         }
       }
 
       steps {
-        container('nodejs') {
+        container('cypress') {
           sh """
             yarn install --frozen-lockfile
             yarn run test:unit

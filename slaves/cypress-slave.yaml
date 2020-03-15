@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ci-nodejs-slave
+  name: ci-cypress-slave
   namespace: jenkinsci
 spec:
   serviceAccount: jenkinsci-slave-serviceaccount
   podRetention: never()
   containers:
-    - name: nodejs
-      image: node:13.8.0-alpine
+    - name: cypress
+      image: cypress/base:8
       command:
         - cat
       tty: true
