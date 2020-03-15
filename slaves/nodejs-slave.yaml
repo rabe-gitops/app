@@ -4,6 +4,7 @@ metadata:
   name: ci-nodejs-slave
   namespace: jenkinsci
 spec:
+  serviceAccount: jenkinsci-slave-serviceaccount
   containers:
     - name: nodejs
       image: node:13.8.0-alpine

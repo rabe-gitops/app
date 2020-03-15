@@ -30,8 +30,11 @@ pipeline {
 
       steps {
         container('nodejs') {
-          sh 'yarn run test:unit'
-          sh 'yarn run test:e2e'
+          sh """
+            yarn install --frozen-lockfile
+            yarn run test:unit
+            yarn run test:e2e
+          """
         }
       }
     }
