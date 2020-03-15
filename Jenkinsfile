@@ -8,6 +8,7 @@ pipeline {
     ECR_REPO_NAME = 'app'
     ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
     SLAVES_TEMPLATES_PATH = 'slaves'
+    DEBUG = "cypress:*"
   }
 
   /*** STAGES ***/
