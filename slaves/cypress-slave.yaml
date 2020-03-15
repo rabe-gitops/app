@@ -8,12 +8,12 @@ spec:
   podRetention: never()
   containers:
     - name: cypress
-      image: cypress/included:4.0.2
+      image: cypress/base:13.6.0
       command:
         - cat
       tty: true
       imagePullPolicy: IfNotPresent
       resources:
         limits:
-          cpu: 2000m
+          cpu: 1500m
           memory: 512Mi
