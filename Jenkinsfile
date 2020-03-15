@@ -12,8 +12,8 @@ pipeline {
   /*** STAGES ***/
   stages {
 
-    /** TEST **/
-    /* executed for all branches, but not for building tags */
+    /** UNIT TESTING **/
+    /* executed for all branches and change requests, but not for tag builds */
     stage('unit-testing') {
 
       when {
@@ -22,12 +22,29 @@ pipeline {
       }
 
       agent {
-        label 'jenkins-slave' // image: jenkins/jnlp-slave:alpine
+        label 'nodejs-slave' // image: node:alpine
       }
 
       steps {
-        sh 'printenv'
-        echo 'TODO: UNIT TESTING'
+        sh 'yarn run test:unit'
+      }
+    }
+
+    /** E2E TESTING **/
+    /* executed for all branches and change requests, but not for tag builds */
+    stage('e2e-testing') {
+
+      when {
+        beforeAgent true
+        not { buildingTag() }
+      }
+
+      agent {
+        label 'nodejs-slave' // image: node:alpine
+      }
+
+      steps {
+        sh 'yarn run test:e2e'
       }
     }
 
