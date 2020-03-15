@@ -7,14 +7,15 @@ pipeline {
     AWS_REGION = 'eu-west-1'
     ECR_REPO_NAME = 'app'
     ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+    SLAVES_TEMPLATES_PATH = 'slaves'
   }
 
   /*** STAGES ***/
   stages {
 
-    /** UNIT TESTING **/
+    /** UNIT & E2E TESTING **/
     /* executed for all branches and change requests, but not for tag builds */
-    stage('unit-testing') {
+    stage('test') {
 
       when {
         beforeAgent true
@@ -22,29 +23,16 @@ pipeline {
       }
 
       agent {
-        label 'nodejs-slave' // image: node:alpine
+        kubernetes {
+          yamlFile "${SLAVES_TEMPLATES_PATH}/nodejs-slave.yaml"
+        }
       }
 
       steps {
-        sh 'yarn run test:unit'
-      }
-    }
-
-    /** E2E TESTING **/
-    /* executed for all branches and change requests, but not for tag builds */
-    stage('e2e-testing') {
-
-      when {
-        beforeAgent true
-        not { buildingTag() }
-      }
-
-      agent {
-        label 'nodejs-slave' // image: node:alpine
-      }
-
-      steps {
-        sh 'yarn run test:e2e'
+        container('nodejs') {
+          sh 'yarn run test:unit'
+          sh 'yarn run test:e2e'
+        }
       }
     }
 
@@ -76,7 +64,6 @@ pipeline {
             // select the 'kaniko' container inside the 'kaniko slave' pod
             container('kaniko') {
               sh """
-                pwd
                 /kaniko/executor \
                   --dockerfile \$(pwd)/Dockerfile \
                   --context \$(pwd) \

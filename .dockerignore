@@ -1,10 +1,20 @@
+# Git
 .git/
 .gitignore
-.dockerignore
-.DS_Store
-Dockerfile
-Jenkinsfile
 LICENSE
 README.md
+
+# Docker
+.dockerignore
+Dockerfile
+
+# macOS
+.DS_Store
+
+# Jenkins
+Jenkinsfile
+slaves/
+
+# Node.js
 node_modules/
 dist/

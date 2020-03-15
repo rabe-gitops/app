@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ci-nodejs-slave
+  namespace: jenkinsci
+spec:
+  containers:
+    - name: nodejs
+      image: node:13.8.0-alpine
+      command:
+        - cat
+      tty: true
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          cpu: 250m
+          memory: 256Mi
