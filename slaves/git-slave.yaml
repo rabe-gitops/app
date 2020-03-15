@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ci-generic-slave
+  name: ci-git-slave
   namespace: jenkinsci
 spec:
   serviceAccount: jenkinsci-slave-serviceaccount
   podRetention: never()
   containers:
-    - name: jnlp
-      image: jenkins/jnlp-slave:4.0.1-1-alpine
+    - name: git
+      image: alpine/git:v2.24.1
       command:
         - cat
       tty: true
