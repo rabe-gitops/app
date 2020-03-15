@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ci-cypress-slave
+  name: ci-kaniko-slave
   namespace: jenkinsci
 spec:
   serviceAccount: jenkinsci-slave-serviceaccount
   podRetention: never()
   containers:
-    - name: cypress
-      image: cypress/base:13.6.0
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug-v0.18.0
       command:
         - cat
       tty: true
@@ -17,3 +17,10 @@ spec:
         limits:
           cpu: 1000m
           memory: 512Mi
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
+  volumes:
+    - name: docker-config
+      configMap:
+        name: docker-config

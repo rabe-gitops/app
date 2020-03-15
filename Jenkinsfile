@@ -8,7 +8,6 @@ pipeline {
     ECR_REPO_NAME = 'app'
     ECR_REPO_URI = "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}"
     SLAVES_TEMPLATES_PATH = 'slaves'
-    DEBUG = "cypress:*"
   }
 
   /*** STAGES ***/
@@ -24,6 +23,7 @@ pipeline {
       }
 
       agent {
+        // execute on the 'cypress slave' pod
         kubernetes {
           yamlFile "${SLAVES_TEMPLATES_PATH}/cypress-slave.yaml"
         }
@@ -34,7 +34,6 @@ pipeline {
           sh """
             yarn install --frozen-lockfile
             yarn run test:unit
-            yarn run test:e2e
           """
         }
       }
@@ -60,7 +59,7 @@ pipeline {
           agent {
             // execute on the 'kaniko slave' pod
             kubernetes {
-              label 'kaniko-slave' // image: gcr.io/kaniko-project/executor:debug
+              yamlFile "${SLAVES_TEMPLATES_PATH}/kaniko-slave.yaml"
             }
           }
 
@@ -87,8 +86,10 @@ pipeline {
           }
 
           agent {
-            // execute on the 'amazon slave' pod
-            label 'amazon-slave' // image: mesosphere/aws-cli
+            // execute on the 'awscli slave' pod
+            kubernetes {
+              yamlFile "${SLAVES_TEMPLATES_PATH}/awscli-slave.yaml"
+            }
           }
 
           steps {
@@ -138,8 +139,10 @@ pipeline {
       }
 
       agent {
-        // execute on the 'jenkins slave' pod
-        label 'jenkins-slave' // image: jenkins/jnlp-slave:alpine
+        // execute on the 'generic slave' pod
+        kubernetes {
+          yamlFile "${SLAVES_TEMPLATES_PATH}/generic-slave.yaml"
+        }
       }
 
       steps {
