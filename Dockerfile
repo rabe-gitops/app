@@ -2,8 +2,9 @@
 FROM node:13.8.0-alpine AS build-stage
 COPY . /usr/local/app/
 WORKDIR /usr/local/app/
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --no-cache --production
 RUN yarn run build
+RUN yarn cache clean
 
 # PRODUCTION STAGE
 FROM nginx:1.17.8-alpine

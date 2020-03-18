@@ -25,17 +25,16 @@ pipeline {
       agent {
         // execute on the 'cypress slave' pod
         kubernetes {
+          defaultContainer 'cypress'
           yamlFile "${SLAVES_TEMPLATES_PATH}/cypress-slave.yaml"
         }
       }
 
       steps {
-        container('cypress') {
-          sh """
-            yarn install --frozen-lockfile
-            yarn run test:unit
-          """
-        }
+        sh """
+          yarn install --frozen-lockfile --no-cache
+          yarn run test:unit
+        """
       }
     }
 
@@ -59,21 +58,19 @@ pipeline {
           agent {
             // execute on the 'kaniko slave' pod
             kubernetes {
+              defaultContainer 'kaniko'
               yamlFile "${SLAVES_TEMPLATES_PATH}/kaniko-slave.yaml"
             }
           }
 
           steps {
-            // select the 'kaniko' container inside the 'kaniko slave' pod
-            container('kaniko') {
-              sh """
-                /kaniko/executor \
-                  --dockerfile \$(pwd)/Dockerfile \
-                  --context \$(pwd) \
-                  --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
-                  --destination=${env.ECR_REPO_URI}:latest
-              """
-            }
+            sh """
+              /kaniko/executor \
+                --dockerfile \$(pwd)/Dockerfile \
+                --context \$(pwd) \
+                --destination=${env.ECR_REPO_URI}:${env.GIT_COMMIT.take(7)} \
+                --destination=${env.ECR_REPO_URI}:latest
+            """
           }
         }
 
@@ -88,29 +85,27 @@ pipeline {
           agent {
             // execute on the 'awscli slave' pod
             kubernetes {
+              defaultContainer 'awscli'
               yamlFile "${SLAVES_TEMPLATES_PATH}/awscli-slave.yaml"
             }
           }
 
           steps {
-            // select the 'awscli' container inside the 'amazon slave' pod
-            container('awscli') {
-              script {
-                // this step depends on the branch build one; lock can't be used in this case; poll on ECR
-                timeout(300) {
-                  waitUntil {
-                    sleep(10)
-                    sh(script: """
-                        aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION}
-                      """, returnStatus: true
-                    ) == 0
-                  }
+            script {
+              // this step depends on the branch build one; lock can't be used in this case; poll on ECR
+              timeout(300) {
+                waitUntil {
+                  sleep(10)
+                  sh(script: """
+                      aws ecr describe-images --repository-name=${env.ECR_REPO_NAME} --image-ids=imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION}
+                    """, returnStatus: true
+                  ) == 0
                 }
-                sh """
-                  manifest=\$(aws ecr batch-get-image --repository-name ${env.ECR_REPO_NAME} --image-ids imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION} --query 'images[].imageManifest' --output text)
-                  aws ecr put-image --repository-name ${env.ECR_REPO_NAME} --image-tag ${env.TAG_NAME} --image-manifest "\${manifest}" --region ${env.AWS_REGION}
-                """
               }
+              sh """
+                manifest=\$(aws ecr batch-get-image --repository-name ${env.ECR_REPO_NAME} --image-ids imageTag=${env.GIT_COMMIT.take(7)} --region ${env.AWS_REGION} --query 'images[].imageManifest' --output text)
+                aws ecr put-image --repository-name ${env.ECR_REPO_NAME} --image-tag ${env.TAG_NAME} --image-manifest "\${manifest}" --region ${env.AWS_REGION}
+              """
             }
           }
         }
@@ -141,37 +136,35 @@ pipeline {
       agent {
         // execute on the 'git slave' pod
         kubernetes {
+          defaultContainer 'git'
           yamlFile "${SLAVES_TEMPLATES_PATH}/git-slave.yaml"
         }
       }
 
       steps {
-        
-        container('git') {
-          withCredentials([usernamePassword(
-            credentialsId: 'rabe-gitops-jenkinsci',
-            usernameVariable: 'GIT_EMAIL',
-            passwordVariable: 'GIT_TOKEN'
-          )]) {
-            script {
-              def IMAGE_TAG = env.GIT_COMMIT.take(7)
-              def IMAGE_TAG_PREFIX = 'app'
-              if (env.TAG_NAME) {
-                IMAGE_TAG = env.TAG_NAME
-                IMAGE_TAG_PREFIX = 'rel'
-              }
-              sh """
-                git clone -b master --single-branch https://${env.GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
-                cd ${env.GIT_MANIFESTS_REPO_NAME}
-                sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
-                git config user.name ${env.GIT_USERNAME}
-                git config user.email ${GIT_EMAIL}
-                git add .
-                git diff-index --quiet HEAD || git commit -m "Update base image with version '${IMAGE_TAG}'"
-                git tag ${IMAGE_TAG_PREFIX}-${IMAGE_TAG}
-                git push origin master --tags
-              """
+        withCredentials([usernamePassword(
+          credentialsId: 'rabe-gitops-jenkinsci',
+          usernameVariable: 'GIT_EMAIL',
+          passwordVariable: 'GIT_TOKEN'
+        )]) {
+          script {
+            def IMAGE_TAG = env.GIT_COMMIT.take(7)
+            def IMAGE_TAG_PREFIX = 'app'
+            if (env.TAG_NAME) {
+              IMAGE_TAG = env.TAG_NAME
+              IMAGE_TAG_PREFIX = 'rel'
             }
+            sh """
+              git clone -b master --single-branch https://${env.GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
+              cd ${env.GIT_MANIFESTS_REPO_NAME}
+              sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
+              git config user.name ${env.GIT_USERNAME}
+              git config user.email ${GIT_EMAIL}
+              git add .
+              git diff-index --quiet HEAD || git commit -m "Update base image with version '${IMAGE_TAG}'"
+              git tag ${IMAGE_TAG_PREFIX}-${IMAGE_TAG}
+              git push origin master --tags
+            """
           }
         }
       }
