@@ -8,7 +8,7 @@ spec:
   podRetention: never()
   containers:
     - name: kaniko
-      image: gcr.io/kaniko-project/executor:debug-v0.18.0
+      image: gcr.io/kaniko-project/executor:debug-v0.23.0
       command:
         - cat
       tty: true

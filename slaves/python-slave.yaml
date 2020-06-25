@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ci-python-slave
+  namespace: jenkinsci
+spec:
+  serviceAccount: jenkinsci-slave-serviceaccount
+  podRetention: never()
+  containers:
+    - name: python
+      image: python:3.8-alpine
+      command:
+        - cat
+      tty: true
+      imagePullPolicy: IfNotPresent
