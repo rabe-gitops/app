@@ -13,30 +13,41 @@ pipeline {
   /*** STAGES ***/
   stages {
 
-    /** UNIT & E2E TESTING **/
-    /* executed for all branches and change requests, but not for tag builds */
-    stage('test') {
-
-      when {
-        beforeAgent true
-        not { buildingTag() }
-      }
-
+    stage('discovery') {
       agent {
-        // execute on the 'cypress slave' pod
         kubernetes {
-          defaultContainer 'cypress'
-          yamlFile "${SLAVES_TEMPLATES_PATH}/cypress-slave.yaml"
+          defaultContainer 'python'
+          yamlFile "${SLAVES_TEMPLATES_PATH}/python-slave.yaml"
         }
       }
-
       steps {
-        sh """
-          yarn install --frozen-lockfile --no-cache
-          yarn run test:unit
-        """
+        sh 'python --version'
       }
     }
+    /** UNIT & E2E TESTING **/
+    /* executed for all branches and change requests, but not for tag builds */
+    // stage('test') {
+
+    //   when {
+    //     beforeAgent true
+    //     not { buildingTag() }
+    //   }
+
+    //   agent {
+    //     // execute on the 'cypress slave' pod
+    //     kubernetes {
+    //       defaultContainer 'cypress'
+    //       yamlFile "${SLAVES_TEMPLATES_PATH}/cypress-slave.yaml"
+    //     }
+    //   }
+
+    //   steps {
+    //     sh """
+    //       yarn install --frozen-lockfile --no-cache
+    //       yarn run test:unit
+    //     """
+    //   }
+    // }
 
     /** BUILD **/
     /* executed in two ways:
