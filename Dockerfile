@@ -2,7 +2,7 @@
 FROM node:13.8.0-alpine AS build-stage
 COPY . /usr/local/app/
 WORKDIR /usr/local/app/
-RUN yarn install --frozen-lockfile --no-cache --production
+RUN yarn install --frozen-lockfile --no-cache
 RUN yarn run build
 RUN yarn cache clean
 
