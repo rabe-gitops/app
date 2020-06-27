@@ -170,7 +170,7 @@ pipeline {
               git config user.email ${GIT_EMAIL}
               git add .
               git diff-index --quiet HEAD || git commit -m "Update base image with version '${IMAGE_TAG}'"
-              git tag ${IMAGE_TAG_PREFIX}${IMAGE_TAG}
+              git tag ${IMAGE_TAG_PREFIX}-${IMAGE_TAG}
               git push origin master --tags
             """
           }
