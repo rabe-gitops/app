@@ -136,8 +136,8 @@ pipeline {
       agent {
         // execute on the 'python slave' pod
         kubernetes {
-          defaultContainer 'python'
-          yamlFile "${SLAVES_TEMPLATES_PATH}/python-slave.yaml"
+          defaultContainer 'git'
+          yamlFile "${SLAVES_TEMPLATES_PATH}/git-slave.yaml"
         }
       }
 
