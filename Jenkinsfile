@@ -162,15 +162,17 @@ pipeline {
             //     --image_tag_prefix=${IMAGE_TAG_PREFIX} \
             //     --new_image_tag=${IMAGE_TAG} \
             // """
-            git clone -b master --single-branch https://${env.GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
-            cd ${env.GIT_MANIFESTS_REPO_NAME}
-            sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
-            git config user.name ${env.GIT_USERNAME}
-            git config user.email ${GIT_EMAIL}
-            git add .
-            git diff-index --quiet HEAD || git commit -m "Update base image with version '${IMAGE_TAG}'"
-            git tag ${IMAGE_TAG_PREFIX}${IMAGE_TAG}
-            git push origin master --tags
+            sh """
+              git clone -b master --single-branch https://${env.GIT_USERNAME}:${GIT_TOKEN}@${env.GIT_MANIFESTS_REPO_URI}
+              cd ${env.GIT_MANIFESTS_REPO_NAME}
+              sed -i 's|image: .*|image: ${env.ECR_REPO_URI}:${IMAGE_TAG}|g' ${env.APP_MANIFEST_FILE}
+              git config user.name ${env.GIT_USERNAME}
+              git config user.email ${GIT_EMAIL}
+              git add .
+              git diff-index --quiet HEAD || git commit -m "Update base image with version '${IMAGE_TAG}'"
+              git tag ${IMAGE_TAG_PREFIX}${IMAGE_TAG}
+              git push origin master --tags
+            """
           }
         }
       }
