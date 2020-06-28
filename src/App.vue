@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/storm.png">
+    <img alt="Vue logo" src="./assets/storm.svg">
     <HelloWorld msg="Welcome to Rabe GitOps App"/>
   </div>
 </template>
@@ -24,5 +24,10 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+img {
+  width: max-content;
+  margin-bottom: 100px;
 }
 </style>
