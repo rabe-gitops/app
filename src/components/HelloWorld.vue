@@ -4,7 +4,7 @@
     <p>
       A comprehensive journey into the future of DevOps.
     </p>
-    <h2>Xchange 2020</h2>
+    <h2>Xchange 2021</h2>
     <ul>
     </ul>
     <h6>made with <span style="color: #e25555;">&hearts;</span> by</h6>
