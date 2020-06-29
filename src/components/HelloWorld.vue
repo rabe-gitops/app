@@ -15,6 +15,8 @@
 </template>
 
 <script>
+import '../static/js/config.js'
+
 export default {
   name: 'HelloWorld',
   props: {
