@@ -1,10 +1,10 @@
 <template>
   <div id="app">
     <div id="xchange-box">
-      <img id="xchange-logo" alt="Xchange 2020 logo" src="./assets/xchange2020-logo.png">
+      <img id="xchange-logo" alt="Xchange 2020 logo" src="./static/img/xchange2020-logo.png">
     </div>
     <div id="storm-box">
-      <img id="storm-logo" alt="Storm Reply logo" src="./assets/storm.svg">
+      <img id="storm-logo" alt="Storm Reply logo" src="./static/img/storm.svg">
     </div>
     <HelloWorld msg="Rabe GitOps"/>
   </div>
