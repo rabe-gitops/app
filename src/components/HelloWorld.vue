@@ -36,7 +36,7 @@ export default {
         timeout: '3000'
       }).then(response => {
           console.log(response);
-          this.welcomeMessage = response.data;
+          this.welcomeMessage = response.data.text;
         })
         .catch(error => {
           console.log(error);
