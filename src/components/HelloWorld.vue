@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import endpoints from '@/static/js/config.js'
+require('@/static/js/config.js');
 
 export default {
   name: 'HelloWorld',
