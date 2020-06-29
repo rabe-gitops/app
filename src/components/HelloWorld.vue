@@ -15,8 +15,6 @@
 </template>
 
 <script>
-import * as config from '../static/js/config.js';
-
 export default {
   name: 'HelloWorld',
   props: {
@@ -32,7 +30,7 @@ export default {
       const axios = require('axios');
       axios({
         method: 'get',
-        url: `https://${config.endpoints.API_ENDPOINT}/message/welcome`,
+        url: `https://${endpoints.API_ENDPOINT}/message/welcome`,
         timeout: '3000'
       }).then(response => {
           console.log(response);
