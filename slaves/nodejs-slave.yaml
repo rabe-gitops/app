@@ -8,7 +8,7 @@ spec:
   podRetention: never()
   containers:
     - name: nodejs
-      image: node:13.8.0-alpine
+      image: node:14.4-alpine
       command:
         - cat
       tty: true
