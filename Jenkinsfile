@@ -25,8 +25,8 @@ pipeline {
       agent {
         // execute on the 'cypress slave' pod
         kubernetes {
-          defaultContainer 'cypress'
-          yamlFile "${SLAVES_TEMPLATES_PATH}/cypress-slave.yaml"
+          defaultContainer 'nodejs'
+          yamlFile "${SLAVES_TEMPLATES_PATH}/nodejs-slave.yaml"
         }
       }
 
