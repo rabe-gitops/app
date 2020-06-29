@@ -1,13 +1,10 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <p>
-      A comprehensive journey into the future of DevOps.
-    </p>
-    <h2>Xchange 2021</h2>
+    <h2>{{ welcomeMessage }}</h2>
     <ul>
     </ul>
-    <h6>made with <span style="color: #e25555;">&hearts;</span> by</h6>
+    <h4><i>made with <span style="color: #e25555;">&hearts;</span> by</i></h4>
     <h4>Claudio Scalzo</h4>
     <h4>Luca Lombardo</h4>
   </div>
@@ -19,6 +16,31 @@ export default {
   props: {
     msg: String,
   },
+  data () {
+    return {
+      welcomeMessage: ""
+    }
+  },
+  methods: {
+    getWelcomeMessage: function() {
+      const axios = require('axios');
+      axios({
+        method: 'get',
+        url: 'https://api.rabegitops.it/messages/welcome',
+        timeout: '3000'
+      }).then(response => {
+          console.log(response);
+          this.welcomeMessage = response.data;
+        })
+        .catch(error => {
+          console.log(error);
+          this.welcomeMessage = "error";
+        });
+    }
+  },
+  mounted () {
+    this.getWelcomeMessage()
+  }
 };
 </script>
 

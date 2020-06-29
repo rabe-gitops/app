@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/storm.svg">
-    <HelloWorld msg="Welcome to Rabe GitOps App"/>
+    <img alt="Storm Reply logo" src="./assets/storm.svg">
+    <HelloWorld msg="Rabe GitOps"/>
   </div>
 </template>
 
