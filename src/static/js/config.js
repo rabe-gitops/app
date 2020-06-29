@@ -1,5 +1,3 @@
-const endpoints = (() => {
-    return {
-      "API_ENDPOINT": "api.rabegitops.it",
-    };
-})();
+global.endpoints = {
+  "API_ENDPOINT": "api.rabegitops.it"
+};
